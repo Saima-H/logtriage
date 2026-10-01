@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>LogTriage</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      background: #ffe4ec;
+      color: #333;
+    }
+    h1 { margin-bottom: 0.25rem; color: #b03060; }
+    .sub { color: #8a5a68; margin-top: 0; }
+    textarea {
+      width: 100%;
+      height: 100px;
+      font-family: monospace;
+      padding: 0.5rem;
+      border: 1px solid #e8b7c4;
+      border-radius: 6px;
+      background: #fff;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 0.5rem 1.2rem;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      background: #b03060;
+      color: white;
+      border: none;
+      border-radius: 6px;
+    }
+    button:hover { background: #8f2649; }
+    table { width: 100%; border-collapse: collapse; margin-top: 2rem; background: #fff; border-radius: 6px; overflow: hidden; }
+    th, td { text-align: left; padding: 0.6rem 0.8rem; border-bottom: 1px solid #f0d3dc; vertical-align: top; }
+    th { background: #fbd6e0; color: #7a2745; }
+    .sev-info { color: #555; }
+    .sev-warn { color: #b58900; }
+    .sev-error { color: #cb4b16; }
+    .sev-critical { color: #dc322f; font-weight: bold; }
+    .sev-unknown { color: #999; }
+  </style>
+</head>
+<body>
+  <h1>LogTriage</h1>
+  <p class="sub">Paste a log line. Get severity + a suggested fix.</p>
+
+  <textarea id="logInput" placeholder="2026-10-01 10:23:11 ERROR disk usage 98% on web-server-3"></textarea>
+  <br>
+  <button onclick="submitLog()">Analyze</button>
+
+  <table id="results">
+    <thead>
+      <tr><th>Log</th><th>Severity</th><th>Suggestion</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+<script>
+async function submitLog() {
+  const content = document.getElementById("logInput").value.trim();
+  if (!content) return;
+  const r = await fetch("/analyze", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({content})
+  });
+  if (r.ok) {
+    document.getElementById("logInput").value = "";
+    loadLogs();
+  }
+}
+
+async function loadLogs() {
+  const r = await fetch("/logs");
+  const logs = await r.json();
+  const tbody = document.querySelector("#results tbody");
+  tbody.innerHTML = "";
+  for (const log of logs) {
+    const tr = document.createElement("tr");
+    const sev = log.severity || "unknown";
+    tr.innerHTML = `
+      <td>${escapeHtml(log.content)}</td>
+      <td class="sev-${sev}">${sev}</td>
+      <td>${escapeHtml(log.suggestion || "")}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[c]);
+}
+
+loadLogs();
+</script>
+</body>
+</html>
