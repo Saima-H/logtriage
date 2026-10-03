@@ -1,3 +1,4 @@
+[![CI](https://github.com/Saima-H/logtriage/actions/workflows/ci.yml/badge.svg)](https://github.com/Saima-H/logtriage/actions/workflows/ci.yml)
 # LogTriage
 
 **AI-powered log triage service.** Paste a log line, get back a severity classification and a suggested fix — powered by an LLM.
